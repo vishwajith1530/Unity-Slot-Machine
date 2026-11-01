@@ -1,3 +1,7 @@
 
 .vs/
 Temp/
+obj/
+UserSettings/
+*.sln
+*.csproj
