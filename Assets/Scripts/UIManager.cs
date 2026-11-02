@@ -12,74 +12,90 @@ public class UIManager : MonoBehaviour
     [Header("Game Reference")]
     [SerializeField] private GameManager gameManager;
 
-    public void UpdateDisplay(
-        int balance,
-        int bet,
-        string message)
+    [Header("Audio Reference")]
+    [SerializeField] private AudioManager audioManager;
+
+    public void UpdateDisplay(int balance, int bet, string message)
     {
         if (balanceText != null)
-        {
             balanceText.text = "BALANCE: " + balance;
-        }
 
         if (betText != null)
-        {
             betText.text = "BET: " + bet;
-        }
 
         if (resultText != null)
-        {
             resultText.text = message;
-        }
     }
-
-    // Individual bet buttons
 
     public void SelectBet10()
     {
-        gameManager.SetBet(0);
+        if (audioManager != null)
+            audioManager.PlaySelect();
+
+        if (gameManager != null)
+            gameManager.SetBet(0);
     }
 
     public void SelectBet50()
     {
-        gameManager.SetBet(1);
+        if (audioManager != null)
+            audioManager.PlaySelect();
+
+        if (gameManager != null)
+            gameManager.SetBet(1);
     }
 
     public void SelectBet100()
     {
-        gameManager.SetBet(2);
-    }
+        if (audioManager != null)
+            audioManager.PlaySelect();
 
-    // Bet Up and Bet Down buttons
+        if (gameManager != null)
+            gameManager.SetBet(2);
+    }
 
     public void SelectNextBet()
     {
-        gameManager.ChangeBet(1);
+        if (audioManager != null)
+            audioManager.PlayClick();
+
+        if (gameManager != null)
+            gameManager.ChangeBet(1);
     }
 
     public void SelectPreviousBet()
     {
-        gameManager.ChangeBet(-1);
-    }
+        if (audioManager != null)
+            audioManager.PlayClick();
 
-    // Spin button
+        if (gameManager != null)
+            gameManager.ChangeBet(-1);
+    }
 
     public void OnSpinButton()
     {
-        gameManager.Spin();
-    }
+        if (audioManager != null)
+            audioManager.PlayLever();
 
-    // Lever button
+        if (gameManager != null)
+            gameManager.Spin();
+    }
 
     public void OnLeverClicked()
     {
-        gameManager.Spin();
-    }
+        if (audioManager != null)
+            audioManager.PlayLever();
 
-    // Reset button
+        if (gameManager != null)
+            gameManager.Spin();
+    }
 
     public void OnResetButton()
     {
-        gameManager.ResetGame();
+        if (audioManager != null)
+            audioManager.PlayReset();
+
+        if (gameManager != null)
+            gameManager.ResetGame();
     }
 }

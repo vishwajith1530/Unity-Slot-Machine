@@ -22,14 +22,15 @@ public class GameManager : MonoBehaviour
     [Header("UI Reference")]
     [SerializeField] private UIManager uiManager;
 
+    [Header("Audio Reference")]
+    [SerializeField] private AudioManager audioManager;
+
     private int balance;
     private int currentBetIndex = 0;
     private bool isSpinning;
-
     private Coroutine spinCoroutine;
 
     public int Balance => balance;
-
     public int CurrentBet => betOptions[currentBetIndex];
 
     private void Start()
@@ -39,6 +40,12 @@ public class GameManager : MonoBehaviour
         ValidateSetup();
 
         UpdateUI("PLACE YOUR BET AND SPIN!");
+
+        // Welcome sound when the game starts.
+        if (audioManager != null)
+        {
+            audioManager.PlayStart();
+        }
     }
 
     private void ValidateSetup()
@@ -59,16 +66,39 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Select bet using index:
-    // 0 = 10, 1 = 50, 2 = 100
+    private bool IsGameSetupValid()
+    {
+        if (reels == null || reels.Length != 3)
+            return false;
+
+        if (symbolSprites == null || symbolSprites.Length != 4)
+            return false;
+
+        if (betOptions == null || betOptions.Length == 0)
+            return false;
+
+        foreach (ReelController reel in reels)
+        {
+            if (reel == null)
+                return false;
+        }
+
+        foreach (Sprite sprite in symbolSprites)
+        {
+            if (sprite == null)
+                return false;
+        }
+
+        return true;
+    }
 
     public void SetBet(int betIndex)
     {
-        if (isSpinning)
-            return;
+        if (isSpinning) return;
 
-        if (betIndex < 0 || betIndex >= betOptions.Length)
-            return;
+        if (betOptions == null || betOptions.Length == 0) return;
+
+        if (betIndex < 0 || betIndex >= betOptions.Length) return;
 
         currentBetIndex = betIndex;
 
@@ -77,8 +107,9 @@ public class GameManager : MonoBehaviour
 
     public void ChangeBet(int direction)
     {
-        if (isSpinning)
-            return;
+        if (isSpinning) return;
+
+        if (betOptions == null || betOptions.Length == 0) return;
 
         currentBetIndex += direction;
 
@@ -91,30 +122,41 @@ public class GameManager : MonoBehaviour
         UpdateUI("BET: " + CurrentBet);
     }
 
-    // Called by Spin button and Lever button.
-
     public void Spin()
     {
-        if (isSpinning)
-            return;
+        if (isSpinning) return;
 
-        if (reels == null || reels.Length != 3 ||
-            symbolSprites == null || symbolSprites.Length != 4)
+        if (!IsGameSetupValid())
         {
             UpdateUI("GAME SETUP ERROR!");
             Debug.LogError("Check your reel and symbol assignments.");
+
+            if (audioManager != null)
+                audioManager.PlayWarning();
+
             return;
         }
 
         if (balance < CurrentBet)
         {
             UpdateUI("INSUFFICIENT BALANCE!");
+
+            if (audioManager != null)
+                audioManager.PlayWarning();
+
             return;
         }
 
+        // Deduct the bet.
         balance -= CurrentBet;
 
         isSpinning = true;
+
+        // Start continuous reel spinning sound.
+        if (audioManager != null)
+        {
+            audioManager.StartSpin();
+        }
 
         spinCoroutine = StartCoroutine(SpinSequence());
     }
@@ -123,22 +165,31 @@ public class GameManager : MonoBehaviour
     {
         UpdateUI("GOOD LUCK!");
 
-        // Generate three independent random outcomes.
         int[] results = new int[3];
 
+        // Generate final symbols for all three reels.
         for (int i = 0; i < results.Length; i++)
         {
             results[i] = Random.Range(0, symbolSprites.Length);
         }
 
-        // Spin and stop reels one after another.
+        // Spin reels one after another.
         for (int i = 0; i < reels.Length; i++)
         {
             if (reels[i] == null)
             {
                 Debug.LogError("A ReelController is missing.");
+
+                StopSpinAudio();
+
                 isSpinning = false;
+                spinCoroutine = null;
+
                 UpdateUI("REEL SETUP ERROR!");
+
+                if (audioManager != null)
+                    audioManager.PlayWarning();
+
                 yield break;
             }
 
@@ -150,13 +201,20 @@ public class GameManager : MonoBehaviour
                 )
             );
 
+            // Sound when each reel stops.
+            if (audioManager != null)
+            {
+                audioManager.PlayReelStop();
+            }
+
+            // Delay before the next reel stops.
             if (i < reels.Length - 1)
             {
                 yield return new WaitForSeconds(reelStopDelay);
             }
         }
 
-        // All three center symbols must match.
+        // Check whether all three symbols match.
         if (results[0] == results[1] &&
             results[1] == results[2])
         {
@@ -167,37 +225,43 @@ public class GameManager : MonoBehaviour
             balance += winnings;
 
             UpdateUI("JACKPOT! YOU WON " + winnings + "!");
+
+            if (audioManager != null)
+            {
+                audioManager.PlayWin();
+            }
         }
         else
         {
             UpdateUI("BETTER LUCK NEXT TIME!");
+
+            if (audioManager != null)
+            {
+                audioManager.PlayLose();
+            }
         }
+
+        StopSpinAudio();
 
         isSpinning = false;
         spinCoroutine = null;
     }
-
-    // Payout multipliers:
-    // Seven = 10x
-    // Cherry = 5x
-    // Bell = 4x
-    // BAR = 3x
 
     private int GetPayoutMultiplier(int symbolIndex)
     {
         switch (symbolIndex)
         {
             case 0:
-                return 10;
+                return 10; // Seven
 
             case 1:
-                return 5;
+                return 5;  // Cherry
 
             case 2:
-                return 4;
+                return 4;  // Bell
 
             case 3:
-                return 3;
+                return 3;  // BAR
 
             default:
                 return 0;
@@ -206,29 +270,50 @@ public class GameManager : MonoBehaviour
 
     public void ResetGame()
     {
+        // Stop any ongoing spin.
         if (spinCoroutine != null)
         {
             StopCoroutine(spinCoroutine);
             spinCoroutine = null;
         }
 
+        StopSpinAudio();
+
         isSpinning = false;
 
+        // Restore starting balance and default bet.
         balance = startingBalance;
         currentBetIndex = 0;
 
         UpdateUI("GAME RESET! GOOD LUCK!");
     }
 
+    private void StopSpinAudio()
+    {
+        if (audioManager != null)
+        {
+            audioManager.StopSpin();
+        }
+    }
+
     private void UpdateUI(string message)
     {
-        if (uiManager != null)
-        {
-            uiManager.UpdateDisplay(
-                balance,
-                CurrentBet,
-                message
-            );
-        }
+        if (uiManager == null)
+            return;
+
+        if (betOptions == null || betOptions.Length == 0)
+            return;
+
+        currentBetIndex = Mathf.Clamp(
+            currentBetIndex,
+            0,
+            betOptions.Length - 1
+        );
+
+        uiManager.UpdateDisplay(
+            balance,
+            CurrentBet,
+            message
+        );
     }
 }
