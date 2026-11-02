@@ -153,7 +153,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -850, y: 320}
+  m_AnchoredPosition: {x: -850, y: 200}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &65520359
@@ -2310,7 +2310,7 @@ MonoBehaviour:
   reels:
   - {fileID: 1041291825}
   - {fileID: 1059623537}
-  - {fileID: 0}
+  - {fileID: 644354178}
   symbolSprites:
   - {fileID: 21300000, guid: 4d4b6cad252f4ac469d50f8bc84c68e7, type: 3}
   - {fileID: 21300000, guid: 5db49df842afbdf40b67ebc985f8676c, type: 3}
