@@ -1,6 +1,7 @@
 # Unity Slot Machine Game
 
 **Developed by: Vishwajith Rajendran**
+Live Game Link : https://vishwajith1530.github.io/Unity-Slot-Machine/
 
 ## 1. About the Developer
 
