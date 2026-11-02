@@ -5,3 +5,7 @@ obj/
 UserSettings/
 *.sln
 *.csproj
+obj/
+UserSettings/
+*.sln
+*.csproj
